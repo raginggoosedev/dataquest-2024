@@ -6,6 +6,8 @@ from sklearn.preprocessing import OneHotEncoder
 # Prompt user for the data file
 input_file = input("Insert the data file: ")
 
+if ('.' not in input_file): input_file = input_file + ".xlsx"
+
 xls = pd.ExcelFile(input_file)
 
 # Comma delimited is default
