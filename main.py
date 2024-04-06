@@ -2,46 +2,44 @@ import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sys import exit
 
 # Prompt user for the data file
 input_file = input("Insert the data file: ")
-
 if ('.' not in input_file): input_file = input_file + ".xlsx"
-
 xls = pd.ExcelFile(input_file)
 
 # Comma delimited is default
 dataset = pd.read_excel(xls, sheet_name='train', header=0)
+dataset['transDate'] = dataset['transDate'].astype('int64')
+dataset['dateOfBirth'] = dataset['dateOfBirth'].astype('int64')
 
-#dataset = pd.read_csv(input_file, header=0)
 
-# Separate categorical data from numerical data
-categorical_data = dataset.select_dtypes(include=['object'])
-numerical_data = dataset.select_dtypes(exclude=['object'])
+##### PREPROCESSING #####
 
-# Preprocessing
-# Create an instance of SimpleImputer
+# Categorical
+
+categorical_data = dataset.select_dtypes(include=['object']).columns
+
 cat_imputer = SimpleImputer(strategy='most_frequent')
+cat_onehot = OneHotEncoder(handle_unknown='ignore')
+cat_transformer = Pipeline(steps=[('impute', cat_imputer), ('onehot', cat_onehot)])
 
-# Process data in batches
-batch_size = 10000
-imputed_batches = []
-for i in range(0, len(categorical_data), batch_size):
-    batch = categorical_data.iloc[i:i+batch_size]
-    imputed_batch = cat_imputer.fit_transform(batch)
-    imputed_batches.append(imputed_batch)
+preprocessor_for_cat_columns = ColumnTransformer(transformers=[('cat', cat_transformer, categorical_data)], remainder="passthrough")
 
-# Combine imputed batches
-cat_data_imputed = np.vstack(imputed_batches)
+# Numerical
 
-# Use one-hot encoding to turn categorical data into usable data
-encoder = OneHotEncoder(sparse_output=True)
-encoded_data = encoder.fit_transform(categorical_data)
+numerical_data = dataset.select_dtypes(exclude=['object']).columns
 
-# Create a DataFrame with the encoded data
-encoded_df = pd.DataFrame.sparse.from_spmatrix(encoded_data, columns=encoder.get_feature_names_out())
+num_scaler = StandardScaler()
+num_transformer = Pipeline(steps=[('scale', num_scaler)])
 
-# Combine with numerical data
-processed_data = pd.concat([encoded_df, numerical_data], axis=1)
+preprocessor_for_num_columns = ColumnTransformer(transformers=[('num', num_transformer, numerical_data)], remainder="passthrough")
 
-print(processed_data.head())
+
+df_churn_pd_temp1 = preprocessor_for_cat_columns.fit_transform(dataset)
+df_churn_pd_temp2 = preprocessor_for_num_columns.fit_transform(dataset)
+
