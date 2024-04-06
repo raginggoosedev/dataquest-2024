@@ -5,6 +5,7 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestClassifier
 from sys import exit
 
 # Prompt user for the data file
@@ -30,16 +31,38 @@ cat_transformer = Pipeline(steps=[('impute', cat_imputer), ('onehot', cat_onehot
 
 preprocessor_for_cat_columns = ColumnTransformer(transformers=[('cat', cat_transformer, categorical_data)], remainder="passthrough")
 
-# Numerical
+# All columns
 
-numerical_data = dataset.select_dtypes(exclude=['object']).columns
+numerical_data = dataset.select_dtypes(include=[np.cfloat, np.int64]).columns
 
 num_scaler = StandardScaler()
 num_transformer = Pipeline(steps=[('scale', num_scaler)])
 
-preprocessor_for_num_columns = ColumnTransformer(transformers=[('num', num_transformer, numerical_data)], remainder="passthrough")
+preprocessor_for_all_columns = ColumnTransformer(transformers=[('cat', cat_transformer, categorical_data),
+                                                                ('num', num_transformer, numerical_data)], remainder="passthrough")
 
 
-df_churn_pd_temp1 = preprocessor_for_cat_columns.fit_transform(dataset)
-df_churn_pd_temp2 = preprocessor_for_num_columns.fit_transform(dataset)
+##### MODEL #####
 
+model_name = "Random Forest Classifer"
+
+random_forest_classifier = RandomForestClassifier(n_estimators=100, max_depth=2, random_state=0)
+
+rfc_model = Pipeline(steps=[('preprocessorAll', preprocessor_for_all_columns), ('classifier', random_forest_classifier)])
+
+
+print(dataset.columns)
+
+from sklearn.model_selection import train_test_split
+#X = dataset.drop('isFraud', axis=1)
+X = dataset
+y = dataset['isFraud']
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+rfc_model.fit(X_train, y_train)
+
+y_pred_rfc = rfc_model.predict(X_test)
+
+two_d_compare(y_test, y_pred_rfc, model_name)
