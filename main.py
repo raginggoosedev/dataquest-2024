@@ -138,7 +138,5 @@ df_test['isFraud'] = y_pred
 # Get the original columns from the test DataFrame
 original_columns = df_test.columns
 
-# Replace old test with new test sheet including the predictions
-with pd.ExcelWriter(input_file, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
-    df_test.to_excel(writer, sheet_name='test', columns=original_columns, index=False)
-
+# Export findings to a new csv
+df_test.to_csv('team15.csv', index=False)
