@@ -1,0 +1,1 @@
+{'model__colsample_bytree': 1.0, 'model__gamma': 0.2, 'model__learning_rate': 0.15, 'model__max_depth': 5, 'model__n_estimators': 150, 'model__subsample': 0.8}
