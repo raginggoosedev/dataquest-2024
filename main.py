@@ -59,6 +59,8 @@ else:
     print("Best params already found:", best_params)
     f.close()
 
+if ('.' not in input_file): input_file = input_file + ".xlsx"
+
 xls = pd.ExcelFile(input_file)
 
 # Read training and test data
