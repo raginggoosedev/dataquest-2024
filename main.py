@@ -113,6 +113,21 @@ y_test = df_test['isFraud']
 pipeline.set_params(**best_params)
 pipeline.fit(X_train, y_train)
 
+# Make predictions on the training data
+y_pred = pipeline.predict(X_train)
+
+# Calculate evaluation metrics
+accuracy = accuracy_score(y_train, y_pred)
+precision = precision_score(y_train, y_pred)
+recall = recall_score(y_train, y_pred)
+f1 = f1_score(y_train, y_pred)
+
+# Print the evaluation metrics
+print(f"Accuracy: {accuracy}")
+print(f"Precision: {precision}")
+print(f"Recall: {recall}")
+print(f"F1 Score: {f1}")
+
 # Make predictions
 y_pred = pipeline.predict(df_test.drop('isFraud', axis=1))
 
