@@ -1,5 +1,7 @@
+import numpy as np
 import pandas as pd
 import xgboost as xgb
+from openpyxl.reader.excel import load_workbook
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
@@ -102,17 +104,24 @@ if do_cv:
     best_params = find_best_params(input_file, pipeline, X_train, y_train)
     print('Best parameters:', best_params)
 
+X_test = df_test.drop('isFraud', axis=1)
+y_test = df_test['isFraud']
+
 # Apply the best parameters and make predictions
 pipeline.set_params(**best_params)
 pipeline.fit(X_train, y_train)
-y_pred = pipeline.predict(X_test)
 
-# Write predictions to the test sheet of the Excel file
+# Make predictions
+y_pred = pipeline.predict(df_test.drop('isFraud', axis=1))
+
+# y_pred contains the predictions
+df_test = pd.read_excel(xls, sheet_name='test', header=0)
 df_test['isFraud'] = y_pred
-df_test.to_excel(input_file, sheet_name='test', index=False)
 
-# Print model metrics
-print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
-print(f"Precision: + {precision_score(y_test, y_pred)}")
-print(f"Recall: + {recall_score(y_test, y_pred)}")
-print(f"F1 Score: + {f1_score(y_test, y_pred)}")
+# Get the original columns from the test DataFrame
+original_columns = df_test.columns
+
+# Replace old test with new test sheet including the predictions
+with pd.ExcelWriter(input_file, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
+    df_test.to_excel(writer, sheet_name='test', columns=original_columns, index=False)
+
